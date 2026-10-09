@@ -1,14 +1,6 @@
-# verba-mobile
-
 # 🚀 Verba — Plataforma Mobile de Tradução, Resumos e Aprendizado Inteligente
 
 > **Cadeira:** Códigos de Alta Performance - Mobile  
-> **Integrantes:**
->
-> [Breno Luis da Silva Santos - 01796237]
-> [Nome Integrante 2]
-> [Nome Integrante 3]
-> [Nome Integrante 4]
 
 ---
 
