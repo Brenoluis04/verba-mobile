@@ -1,21 +1,13 @@
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import AppRoutes from "./routes/AppRoutes";
 
-import { useState } from 'react';
-import Login from './components/Login';
-import Cadastro from './components/Cadastro';
-import './App.css';
-
-function App() {
-  const [tela, setTela] = useState('login');
-
+export default function App() {
   return (
-    <>
-      {tela === 'login' ? (
-        <Login mudarTela={() => setTela('cadastro')} />
-      ) : (
-        <Cadastro mudarTela={() => setTela('login')} />
-      )}
-    </>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;
