@@ -5,7 +5,7 @@ function Login({ mudarTela }) {
   return (
     <div className="auth-container">
 
-      <h1>Trilhas.IA</h1>
+      <h1>Verba</h1>
 
       <form className="auth-form">
 
