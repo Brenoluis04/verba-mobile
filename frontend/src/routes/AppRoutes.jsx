@@ -1,8 +1,14 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Trilhas from "../pages/Trilhas";
+import Leitor from "../pages/Leitor";
+import Biblioteca from "../pages/Biblioteca";
 import NotFound from "../pages/NotFound";
+
+import LayoutPrivado from "../components/LayoutPrivado";
 import { PrivateRoute, PublicRoute } from "./guards";
 
 export default function AppRoutes() {
@@ -18,6 +24,7 @@ export default function AppRoutes() {
           </PublicRoute>
         }
       />
+
       <Route
         path="/cadastro"
         element={
@@ -28,13 +35,16 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/trilhas"
         element={
           <PrivateRoute>
-            <Trilhas />
+            <LayoutPrivado />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="/leitor" element={<Leitor />} />
+        <Route path="/biblioteca" element={<Biblioteca />} />
+        <Route path="/trilhas" element={<Trilhas />} />
+      </Route>
 
       <Route path="*" element={<NotFound />} />
     </Routes>
