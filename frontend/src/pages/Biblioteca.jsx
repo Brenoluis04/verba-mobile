@@ -1,17 +1,36 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { listarDocumentos } from "../services/documentService";
+import { getErrorMessage } from "../services/api";
 import "./Biblioteca.css";
 
 export default function Biblioteca() {
   const [pesquisa, setPesquisa] = useState("");
   const [filtro, setFiltro] = useState("Todos");
 
-  const documentos = [
-    { id: 1, nome: "Introdução à Programação.pdf", tipo: "PDF", progresso: 80 },
-    { id: 2, nome: "História em Quadrinhos.pdf", tipo: "HQ", progresso: 45 },
-    { id: 3, nome: "Banco de Dados.pdf", tipo: "PDF", progresso: 60 },
-    { id: 4, nome: "Desenvolvimento Web.pdf", tipo: "PDF", progresso: 25 },
-  ];
+  const [documentos, setDocumentos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
+
+  // Busca os documentos na API (GET /api/files/) ao abrir a tela.
+  useEffect(() => {
+    let cancelado = false;
+
+    listarDocumentos()
+      .then((lista) => {
+        if (!cancelado) setDocumentos(lista);
+      })
+      .catch((err) => {
+        if (!cancelado) setErro(getErrorMessage(err, "Não foi possível carregar a biblioteca."));
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   const documentosFiltrados = documentos.filter((doc) => {
     const correspondePesquisa = doc.nome
@@ -49,7 +68,11 @@ export default function Biblioteca() {
       </div>
 
       <section className="biblioteca-documentos">
-        {documentosFiltrados.length > 0 ? (
+        {carregando ? (
+          <p className="biblioteca-vazia">Carregando documentos...</p>
+        ) : erro ? (
+          <p className="biblioteca-vazia">{erro}</p>
+        ) : documentosFiltrados.length > 0 ? (
           documentosFiltrados.map((doc) => (
             <article className="documento-card" key={doc.id}>
               <div className="documento-icone">📄</div>

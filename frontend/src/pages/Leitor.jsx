@@ -1,14 +1,20 @@
 import { useState } from "react";
+import { enviarDocumento } from "../services/documentService";
+import { getErrorMessage } from "../services/api";
 import "./Leitor.css";
 
 export default function Leitor() {
   const [arquivo, setArquivo] = useState(null);
   const [carregando, setCarregando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState(null); // { tipo: "ok" | "erro", texto }
 
   function adicionarDocumento(event) {
     const documento = event.target.files[0];
 
     if (!documento) return;
+
+    setMensagem(null);
 
     setCarregando(true);
 
@@ -16,6 +22,26 @@ export default function Leitor() {
       setArquivo(documento);
       setCarregando(false);
     }, 1000);
+  }
+
+  // Envia o documento aberto para a Biblioteca (POST /api/files/).
+  async function salvarNaBiblioteca() {
+    if (!arquivo || salvando) return;
+
+    setSalvando(true);
+    setMensagem(null);
+
+    try {
+      await enviarDocumento(arquivo);
+      setMensagem({ tipo: "ok", texto: "Documento salvo na Biblioteca." });
+    } catch (err) {
+      setMensagem({
+        tipo: "erro",
+        texto: getErrorMessage(err, "Não foi possível salvar o documento."),
+      });
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
@@ -50,8 +76,14 @@ export default function Leitor() {
             <div className="leitor-acoes">
               <button type="button">Traduzir com IA</button>
               <button type="button">Gerar Resumo</button>
-              <button type="button">Salvar na Biblioteca</button>
+              <button type="button" onClick={salvarNaBiblioteca} disabled={salvando}>
+                {salvando ? "Salvando..." : "Salvar na Biblioteca"}
+              </button>
             </div>
+
+            {mensagem && (
+              <p role={mensagem.tipo === "erro" ? "alert" : "status"}>{mensagem.texto}</p>
+            )}
           </div>
         )}
       </section>
