@@ -1,5 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
+import ProgressBar from "../components/ProgressBar";
 import { useAuth } from "../contexts/AuthContext";
 import "./Trilhas.css";
 
@@ -31,7 +32,7 @@ export default function Trilhas() {
         </div>
 
         <button
-          className="trilhas-sair"
+          className="btn-primary trilhas-sair"
           onClick={() => {
             signOut();
             navigate("/login");
@@ -59,14 +60,7 @@ export default function Trilhas() {
               <h2>{trilha.titulo}</h2>
               <p>{trilha.descricao}</p>
 
-              <div className="trilha-progresso-fundo">
-                <div
-                  className="trilha-progresso-preenchido"
-                  style={{ width: `${trilha.progresso}%` }}
-                />
-              </div>
-
-              <small>{trilha.progresso}% concluído</small>
+              <ProgressBar value={trilha.progresso} />
             </div>
           </article>
         ))}

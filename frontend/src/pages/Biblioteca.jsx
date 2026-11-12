@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
-import { listarDocumentos } from "../services/documentService";
+import ProgressBar from "../components/ProgressBar";
+import { CATEGORIAS, listarDocumentos } from "../services/documentService";
 import { getErrorMessage } from "../services/api";
 import "./Biblioteca.css";
 
@@ -56,7 +57,7 @@ export default function Biblioteca() {
       />
 
       <div className="biblioteca-filtros">
-        {["Todos", "PDF", "HQ"].map((tipo) => (
+        {["Todos", ...CATEGORIAS].map((tipo) => (
           <button
             key={tipo}
             className={filtro === tipo ? "filtro ativo" : "filtro"}
@@ -81,14 +82,7 @@ export default function Biblioteca() {
 
               <span>{doc.tipo}</span>
 
-              <div className="progresso-fundo">
-                <div
-                  className="progresso-preenchido"
-                  style={{ width: `${doc.progresso}%` }}
-                />
-              </div>
-
-              <small>{doc.progresso}% concluído</small>
+              <ProgressBar value={doc.progresso} />
             </article>
           ))
         ) : (
