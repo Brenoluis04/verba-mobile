@@ -2,7 +2,7 @@
   min-height: 100vh;
   width: 100%;
   box-sizing: border-box;
-  background: #1e1e1e;
+  background: var(--fundo);
   color: #fff;
   padding: 45px 6%;
   display: flex;
@@ -22,7 +22,7 @@
   width: min(100%, 500px);
   min-height: 550px;
   margin: auto;
-  background: #2c2c2c;
+  background: var(--card);
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -81,14 +81,10 @@
 .leitor-acoes button {
   width: 100%;
   min-height: 65px;
-  border: none;
   border-radius: 18px;
-  background: #087bff;
-  color: #fff;
   font-family: monospace;
   font-size: 16px;
   font-weight: bold;
-  cursor: default;
 }
 
 .leitor-loading {
@@ -103,7 +99,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #555;
-  border-top-color: #087bff;
+  border-top-color: var(--azul);
   border-radius: 50%;
   animation: girar 0.8s linear infinite;
 }
@@ -127,4 +123,4 @@
     min-height: 450px;
     font-size: 14px;
   }
-}
+}

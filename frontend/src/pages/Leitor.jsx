@@ -74,9 +74,14 @@ export default function Leitor() {
             </div>
 
             <div className="leitor-acoes">
-              <button type="button">Traduzir com IA</button>
-              <button type="button">Gerar Resumo</button>
-              <button type="button" onClick={salvarNaBiblioteca} disabled={salvando}>
+              <button type="button" className="btn-primary">Traduzir com IA</button>
+              <button type="button" className="btn-primary">Gerar Resumo</button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={salvarNaBiblioteca}
+                disabled={salvando}
+              >
                 {salvando ? "Salvando..." : "Salvar na Biblioteca"}
               </button>
             </div>
@@ -89,4 +94,4 @@ export default function Leitor() {
       </section>
     </main>
   );
-}
+}

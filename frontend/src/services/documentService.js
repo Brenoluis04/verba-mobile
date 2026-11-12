@@ -10,8 +10,10 @@ const ENDPOINTS = {
 // Limite do campo nome_exib do model FileUpload (backend/files/models.py).
 const NOME_MAX = 30;
 
+// Categorias aceitas pelo back-end (backend/files/models.py). Os filtros da Biblioteca usam esta lista.
+export const CATEGORIAS = ["PDF", "HQ"];
+
 // Categoria do documento: imagens (HQ/mangá) viram "HQ"; o restante (PDF) vira "PDF".
-// Os mesmos rótulos são usados nos filtros da Biblioteca.
 export function categoriaDoArquivo(arquivo) {
   return arquivo.type?.startsWith("image/") ? "HQ" : "PDF";
 }

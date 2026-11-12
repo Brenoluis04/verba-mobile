@@ -1,0 +1,30 @@
+/* Estilos globais do app. Importado uma única vez em main.jsx. */
+
+:root {
+  --azul: #087bff;
+  --azul-hover: #0066d6;
+  --fundo: #1e1e1e;
+  --card: #2c2c2c;
+  --borda: #444;
+  --texto-suave: #aaa;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #222222;
+  font-family: monospace;
+  color: white;
+}
+
+/* Botão de ação principal. Cada tela só acrescenta tamanho, borda arredondada e fonte. */
+.btn-primary {
+  border: none;
+  background: var(--azul);
+  color: #fff;
+  cursor: pointer;
+}

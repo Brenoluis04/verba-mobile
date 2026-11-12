@@ -1,89 +1,48 @@
-
-from rest_framework import generics, status
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-from django.utils import timezone
-
-import os
-
-from django.shortcuts import get_object_or_404
 from django.http import FileResponse
-from rest_framework.views import APIView
+from rest_framework import generics
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 
 from .models import FileUpload
 from .serial import FileUploadSerializer
 
 
-class FileUploadListCreateView(generics.GenericAPIView):
+class MeusArquivosMixin:
+    """Toda view daqui exige login e só enxerga arquivos do próprio usuário.
 
+    Arquivo de outra pessoa responde 404 (e não 403) para não revelar que ele existe.
+    """
+
+    permission_classes = [IsAuthenticated]
     serializer_class = FileUploadSerializer
+
+    def get_queryset(self):
+        return FileUpload.objects.filter(user=self.request.user)
+
+
+class FileUploadListCreateView(MeusArquivosMixin, generics.ListCreateAPIView):
+    """GET /api/files/  -> lista os arquivos do usuário.
+    POST /api/files/ (multipart: nome_exib, categoria, conteudo) -> envia um arquivo."""
+
     parser_classes = [MultiPartParser, FormParser]
-    queryset = FileUpload.objects.all()
+    pagination_class = None  # o front aceita lista simples
 
-    def get(self, request):
-        arquivos = self.get_queryset()
-        serializer = self.get_serializer(arquivos, many=True)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
-        return Response(serializer.data)
 
-    def post(self, request):
-        dados = request.data.copy()
+class FileUploadDetailView(MeusArquivosMixin, generics.RetrieveDestroyAPIView):
+    """GET /api/files/<id>/ -> dados do arquivo.
+    DELETE /api/files/<id>/ -> apaga o registro e o arquivo do disco."""
 
-        # Compatibilidade temporária com o serializer do Lucas
-        if not dados.get("data_add"):
-            dados["data_add"] = timezone.now().isoformat()
+    def perform_destroy(self, instance):
+        instance.conteudo.delete(save=False)
+        instance.delete()
 
-        serializer = self.get_serializer(data=dados)
 
-        if serializer.is_valid():
-            arquivo = FileUpload.objects.create(
-                nome_exib=serializer.validated_data["nome_exib"],
-                categoria=serializer.validated_data["categoria"],
-                conteudo=serializer.validated_data["conteudo"]
-            )
-
-            resposta = self.get_serializer(arquivo)
-
-            return Response(
-                resposta.data,
-                status=status.HTTP_201_CREATED
-            )
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
- 
-class FileUploadDownloadView(APIView):
+class FileUploadDownloadView(MeusArquivosMixin, generics.GenericAPIView):
+    """GET /api/files/<id>/download/ -> baixa o arquivo original."""
 
     def get(self, request, pk):
-        arquivo = get_object_or_404(FileUpload, pk=pk)
-
-        if not arquivo.conteudo:
-            return Response(
-                {"erro": "Arquivo não encontrado."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        nome_arquivo = os.path.basename(arquivo.conteudo.name)
-
-        return FileResponse(
-            arquivo.conteudo.open("rb"),
-            as_attachment=True,
-            filename=nome_arquivo
-        )
- 
-class FileUploadDetailView(APIView):
-
-    def delete(self, request, pk):
-        arquivo = get_object_or_404(FileUpload, pk=pk)
-
-        if arquivo.conteudo:
-            arquivo.conteudo.delete(save=False)
-
-        arquivo.delete()
-
-        return Response(
-            {"mensagem": "Arquivo excluído com sucesso."},
-            status=status.HTTP_200_OK
-        )
+        arquivo = self.get_object()
+        return FileResponse(arquivo.conteudo.open("rb"), as_attachment=True, filename=arquivo.nome_exib)

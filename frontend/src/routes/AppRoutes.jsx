@@ -2,7 +2,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "../pages/Login";
-import Register from "../pages/Register";
+import Register from "../pages/Cadastro";
 import Trilhas from "../pages/Trilhas";
 import Leitor from "../pages/Leitor";
 import Biblioteca from "../pages/Biblioteca";

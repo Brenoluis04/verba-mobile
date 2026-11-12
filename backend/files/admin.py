@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import FileUpload
+
+
+@admin.register(FileUpload)
+class FileUploadAdmin(admin.ModelAdmin):
+    list_display = ("nome_exib", "categoria", "user", "data_add")
+    list_filter = ("categoria",)
