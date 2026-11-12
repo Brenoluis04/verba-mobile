@@ -15,3 +15,31 @@ O **Verba** é um aplicativo mobile focado na gestão, leitura e tradução inte
 - **Trilhas de Aprendizado:** Gerador de roteiros de estudos ("Do Zero ao Avançado") com orquestração de mídias e cronogramas.
   
 ---
+
+## ▶️ Como rodar
+
+Pré-requisitos: **Python 3.12+** e **Node.js** instalados. Use dois terminais, ambos na pasta raiz do projeto.
+
+### Back-end (Django, porta 8000)
+```powershell
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+> Depois de **puxar código novo**, rode `python manage.py migrate` de novo (pode haver migrations novas).
+> Para rodar os testes: `python manage.py test`
+
+### Front-end (React + Vite, porta 5173)
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+Abra o endereço mostrado pelo Vite (normalmente http://localhost:5173). A URL da API é `http://localhost:8000/api`; para mudar, copie `frontend/.env.example` para `frontend/.env`.
+
+### Observações
+- Os documentos enviados ficam em `backend/media/` (ignorada pelo git). Aceita PDF e imagens (JPG, PNG, GIF, WEBP) de até 20 MB.
+- O banco local é o `backend/db.sqlite3` (ignorado pelo git). Cada pessoa tem o seu.

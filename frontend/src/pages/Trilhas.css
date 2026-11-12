@@ -3,7 +3,7 @@
   min-height: 100vh;
   width: 100%;
   box-sizing: border-box;
-  background: #1e1e1e;
+  background: var(--fundo);
   color: #fff;
   padding: 45px 6%;
   font-family: monospace;
@@ -24,16 +24,12 @@
 }
 
 .trilhas-header p {
-  color: #aaa;
+  color: var(--texto-suave);
 }
 
 .trilhas-sair {
   padding: 12px 25px;
-  border: none;
   border-radius: 10px;
-  background: #087bff;
-  color: #fff;
-  cursor: pointer;
 }
 
 .trilhas-busca {
@@ -46,15 +42,15 @@
   width: 100%;
   padding: 18px 50px 18px 20px;
   box-sizing: border-box;
-  border: 1px solid #444;
+  border: 1px solid var(--borda);
   border-radius: 12px;
-  background: #2c2c2c;
+  background: var(--card);
   color: #fff;
   font-size: 15px;
 }
 
 .trilhas-busca input::placeholder {
-  color: #aaa;
+  color: var(--texto-suave);
 }
 
 .trilhas-busca span {
@@ -63,7 +59,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 25px;
-  color: #aaa;
+  color: var(--texto-suave);
 }
 
 .trilhas-lista {
@@ -77,7 +73,7 @@
   gap: 20px;
   align-items: flex-start;
   padding: 25px;
-  background: #2c2c2c;
+  background: var(--card);
   border-radius: 14px;
 }
 
@@ -96,28 +92,17 @@
 }
 
 .trilha-conteudo p {
-  color: #aaa;
+  color: var(--texto-suave);
   line-height: 1.5;
   margin-bottom: 20px;
 }
 
-.trilha-progresso-fundo {
-  width: 100%;
-  height: 8px;
-  background: #444;
-  border-radius: 10px;
-  overflow: hidden;
+.trilha-conteudo .progresso-fundo {
   margin-bottom: 10px;
 }
 
-.trilha-progresso-preenchido {
-  height: 100%;
-  background: #087bff;
-  border-radius: 10px;
-}
-
 .trilha-conteudo small {
-  color: #aaa;
+  color: var(--texto-suave);
 }
 
 @media (max-width: 700px) {
