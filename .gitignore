@@ -232,3 +232,5 @@ node_modules/
 dist/
 .DS_Store
 *.log
+# Arquivos enviados pelos usuarios (Biblioteca)
+backend/media/
