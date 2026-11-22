@@ -1,37 +1,73 @@
-// TEMPORÁRIO: marcador para o roteamento funcionar. O visual final dos formulários é de outra parte do front.
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getErrorMessage } from "../services/api";
+import AuthForm from "../components/AuthForm";
 
 export default function Register() {
   const { signUp } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nome_completo: "", email: "", senha: "" });
+
+  const [form, setForm] = useState({
+    nome_completo: "",
+    email: "",
+    senha: "",
+  });
+
   const [error, setError] = useState("");
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
       await signUp(form);
-      navigate("/trilhas");
+      navigate("/biblioteca");
     } catch (err) {
-      setError(getErrorMessage(err, "Não foi possível cadastrar."));
+      setError(
+        getErrorMessage(err, "Não foi possível cadastrar.")
+      );
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Cadastro</h1>
-      <input name="nome_completo" placeholder="Nome completo" value={form.nome_completo} onChange={handleChange} required />
-      <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
-      <input name="senha" type="password" placeholder="Senha" value={form.senha} onChange={handleChange} required />
-      {error && <p>{error}</p>}
-      <button type="submit">Cadastrar</button>
-      <p>Já tem uma conta? <Link to="/login">Fazer login</Link></p>
-    </form>
+    <AuthForm
+      titulo="Cadastro"
+      campos={[
+        {
+          name: "nome_completo",
+          type: "text",
+          placeholder: "Nome completo",
+        },
+        {
+          name: "email",
+          type: "email",
+          placeholder: "Email",
+        },
+        {
+          name: "senha",
+          type: "password",
+          placeholder: "Senha",
+        },
+      ]}
+      form={form}
+      handleChange={handleChange}
+      handleSubmit={handleSubmit}
+      error={error}
+      textoBotao="Cadastrar"
+      textoLink="Já tem uma conta?"
+      link={{
+        path: "/login",
+        texto: "Fazer login",
+      }}
+    />
   );
 }

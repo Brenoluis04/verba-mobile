@@ -1,11 +1,20 @@
+
 import { Link } from "react-router-dom";
+import "./NotFound.css";
 
 export default function NotFound() {
   return (
-    <div>
+    <main className="not-found">
       <h1>404</h1>
-      <p>Página não encontrada.</p>
-      <Link to="/login">Voltar ao início</Link>
-    </div>
+      <h2>Página não encontrada</h2>
+      <p>
+        Ops! A página que você está procurando não existe
+        ou foi movida.
+      </p>
+
+      <Link to="/biblioteca" className="not-found-link">
+        Voltar para a Biblioteca
+      </Link>
+    </main>
   );
 }

@@ -1,0 +1,39 @@
+
+.not-found {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.not-found h1 {
+  font-size: 100px;
+  margin: 0;
+  color: #6c63ff;
+}
+
+.not-found h2 {
+  font-size: 28px;
+  margin: 10px 0;
+}
+
+.not-found p {
+  color: #777;
+  margin-bottom: 25px;
+}
+
+.not-found-link {
+  background-color: #6c63ff;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.not-found-link:hover {
+  opacity: 0.85;
+}
