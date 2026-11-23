@@ -1,12 +1,34 @@
-/* Estilos globais do app. Importado uma única vez em main.jsx. */
+/* Estilos globais do app. Importado uma única vez em main.jsx.
+   Paleta e fontes seguem o protótipo do Figma: fundo escuro, cards cinza, azul #087bff como destaque,
+   títulos em JetBrains Mono e textos em Inter (com fontes do sistema como reserva). */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
 
 :root {
+  /* Cores. Os nomes antigos (--azul, --azul-hover, --fundo, --card, --borda, --texto-suave)
+     continuam existindo porque outras telas usam. */
   --azul: #087bff;
   --azul-hover: #0066d6;
-  --fundo: #1e1e1e;
+  --azul-escuro: #1a6fd6; /* parte inicial da barra de progresso */
+  --azul-suave: rgba(8, 123, 255, 0.14);
+  --fundo-cor: #1c1c1e;
+  /* Só use --fundo em "background:" (é um degradê com a cor de fundo por baixo). */
+  --fundo: radial-gradient(120% 55% at 50% -12%, rgba(8, 123, 255, 0.16), transparent 62%),
+    var(--fundo-cor);
   --card: #2c2c2c;
-  --borda: #444;
-  --texto-suave: #aaa;
+  --pilula: #3a3a40; /* filtros, trilhas de barras */
+  --borda: #3d3d42;
+  --texto: #f5f5f7;
+  --texto-suave: #a3a3ab;
+  --perigo: #ff6b6b;
+
+  /* Fontes */
+  --fonte-corpo: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fonte-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Medidas e sombras */
+  --raio-card: 18px;
+  --sombra-card: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --altura-menu: 68px;
 }
 
 * {
@@ -15,10 +37,49 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background-color: #222222;
-  font-family: monospace;
-  color: white;
+  min-height: 100vh;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--fonte-corpo);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2 {
+  font-family: var(--fonte-mono);
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+a {
+  color: var(--azul);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+::selection {
+  background: var(--azul);
+  color: #fff;
+}
+
+/* Foco visível para quem navega pelo teclado. */
+:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
 }
 
 /* Botão de ação principal. Cada tela só acrescenta tamanho, borda arredondada e fonte. */
@@ -27,4 +88,37 @@ body {
   background: var(--azul);
   color: #fff;
   cursor: pointer;
+  box-shadow: 0 6px 18px rgba(8, 123, 255, 0.28);
+  transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--azul-hover);
+  text-decoration: none;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Mensagem de erro de formulário (usada no AuthForm). */
+.error-message {
+  color: var(--perigo);
+  font-size: 13px;
+}
+
+/* Texto só para leitores de tela. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }

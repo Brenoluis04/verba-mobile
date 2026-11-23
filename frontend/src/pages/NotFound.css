@@ -1,0 +1,97 @@
+.notfound-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+/* Brilho azul ao fundo, na mesma cor de destaque do app. */
+.notfound-page::before {
+  content: "";
+  position: absolute;
+  width: min(520px, 90vw);
+  height: min(520px, 90vw);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(8, 123, 255, 0.28), transparent 68%);
+  filter: blur(10px);
+  animation: pulsar 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.notfound-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 28px;
+  background: rgba(44, 44, 46, 0.7);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  animation: aparecer 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.notfound-codigo {
+  font-size: clamp(72px, 24vw, 104px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -4px;
+  background: linear-gradient(180deg, #ffffff 10%, var(--azul) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.notfound-card h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.notfound-card p {
+  max-width: 300px;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.notfound-acao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 14px;
+  padding: 0 30px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+
+@keyframes pulsar {
+  50% {
+    transform: scale(1.12);
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notfound-page::before,
+  .notfound-card {
+    animation: none;
+  }
+}
