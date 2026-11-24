@@ -1,13 +1,50 @@
-.progresso-fundo {
+.progresso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
-  height: 8px;
-  background: var(--borda);
-  border-radius: 10px;
+}
+
+.progresso-fundo {
+  flex: 1;
+  height: 6px;
+  background: var(--pilula);
+  border-radius: 999px;
   overflow: hidden;
 }
 
 .progresso-preenchido {
   height: 100%;
-  background: var(--azul);
-  border-radius: 10px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--azul-escuro), var(--azul));
+  box-shadow: 0 0 10px rgba(8, 123, 255, 0.55);
+  animation: preencher 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.progresso-preenchido.vazio {
+  box-shadow: none;
+}
+
+.progresso-preenchido.completo {
+  background: linear-gradient(90deg, var(--azul), #4aa3ff);
+}
+
+.progresso-valor {
+  min-width: 34px;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+}
+
+@keyframes preencher {
+  from {
+    width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progresso-preenchido {
+    animation: none;
+  }
 }
