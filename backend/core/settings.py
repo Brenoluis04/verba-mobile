@@ -128,8 +128,8 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Tamanho máximo de upload: 20 MB (validado também em files/serial.py)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
-FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 
 # CORS: permite que o front (Vite, porta 5173) converse com a API (porta 8000)
 CORS_ALLOWED_ORIGINS = [

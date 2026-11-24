@@ -3,8 +3,9 @@ from rest_framework import generics
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 
-from .models import FileUpload
-from .serial import FileUploadSerializer
+from .models   import FileUpload
+from .serial   import FileUploadSerializer
+from .traducao import Tradutor
 
 
 class MeusArquivosMixin:
@@ -46,3 +47,8 @@ class FileUploadDownloadView(MeusArquivosMixin, generics.GenericAPIView):
     def get(self, request, pk):
         arquivo = self.get_object()
         return FileResponse(arquivo.conteudo.open("rb"), as_attachment=True, filename=arquivo.nome_exib)
+
+class TraducaoView(MeusArquivosMixin, generics.GenericAPIView):
+    def get(self, request, pk):
+        arq = self.get_object()
+        return extrair_texto_pdf(arq)

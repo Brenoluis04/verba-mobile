@@ -6,7 +6,7 @@ from .models import CATEGORIAS, FileUpload
 
 # Tipos aceitos: PDF (categoria PDF) e imagens (categoria HQ), igual ao <input accept> do Leitor.
 EXTENSOES_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp"}
-TAMANHO_MAXIMO = 20 * 1024 * 1024  # 20 MB
+TAMANHO_MAXIMO = 50 * 1024 * 1024  # 50 MB
 
 
 class FileUploadSerializer(serializers.ModelSerializer):
@@ -26,5 +26,5 @@ class FileUploadSerializer(serializers.ModelSerializer):
         if Path(arquivo.name).suffix.lower() not in EXTENSOES_PERMITIDAS:
             raise serializers.ValidationError("Envie um PDF ou uma imagem (JPG, PNG, GIF ou WEBP).")
         if arquivo.size > TAMANHO_MAXIMO:
-            raise serializers.ValidationError("O arquivo passa do limite de 20 MB.")
+            raise serializers.ValidationError("O arquivo passa do limite de 50 MB.")
         return arquivo
