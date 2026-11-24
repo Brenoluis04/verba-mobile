@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "../pages/Login";
 import Register from "../pages/Cadastro";
-import Trilhas from "../pages/Trilhas";
 import Leitor from "../pages/Leitor";
 import Biblioteca from "../pages/Biblioteca";
 import NotFound from "../pages/NotFound";
@@ -43,7 +42,8 @@ export default function AppRoutes() {
       >
         <Route path="/leitor" element={<Leitor />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
-        <Route path="/trilhas" element={<Trilhas />} />
+        {/* A página Trilhas foi removida. Login, Cadastro e guards ainda mandam para /trilhas, então ela só redireciona. */}
+        <Route path="/trilhas" element={<Navigate to="/leitor" replace />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
