@@ -1,12 +1,15 @@
 from google import genai
 
+class Tradutor:
+    def __init__(self, txt):
+        self.txt = txt
 
-def traduzir(txt):
-    client = genai.Client()
+    def traduzir(self):
+        client = genai.Client()
 
-    interaction = client.interactions.create(
-        model="gemini-4-hydrogen",
-        input="Traduza o seguinte texto. Inclua apenas a tradução na sua resposta. " + txt
-    )
+        interaction = client.interactions.create(
+            model="gemini-4-hydrogen",
+            input="Traduza o seguinte texto. Inclua apenas a tradução na sua resposta. " + self.txt
+        )
 
-    return interaction.output_text
+        return interaction.output_text
