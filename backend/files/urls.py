@@ -11,4 +11,5 @@ urlpatterns = [
     path("<int:pk>/arquivo/", views.FileUploadArquivoView.as_view(), name="arquivo"),
     path("<int:pk>/texto/", views.FileUploadTextoView.as_view(), name="texto"),
     path("<int:pk>/traduzir/", views.FileUploadTraduzirView.as_view(), name="traduzir"),
+    path("<int:pk>/resumir/", views.FileUploadResumirView.as_view(), name="resumir"),
 ]

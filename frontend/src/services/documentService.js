@@ -7,6 +7,7 @@ const ENDPOINTS = {
   arquivo: (id) => `/files/${id}/arquivo/`,
   texto: (id) => `/files/${id}/texto/`,
   traduzir: (id) => `/files/${id}/traduzir/`,
+  resumir: (id) => `/files/${id}/resumir/`,
 };
 
 // Só PDF, até 50 MB (o back-end valida de novo em backend/files/serial.py).
@@ -95,6 +96,20 @@ export async function buscarTexto(id) {
 export async function traduzirDocumento(id) {
   const { data } = await api.post(ENDPOINTS.traduzir(id), null, { timeout: 180000 });
   return data.traducao;
+}
+
+// Tamanhos de resumo aceitos pelo back-end (backend/files/traducao.py).
+export const TAMANHOS_RESUMO = [
+  { valor: "curto", rotulo: "Curto" },
+  { valor: "medio", rotulo: "Médio" },
+  { valor: "longo", rotulo: "Detalhado" },
+];
+
+// POST /api/files/<id>/resumir/  ->  resumo em português feito pela IA (Gemini).
+// Textos longos são resumidos em várias partes, então o timeout é grande.
+export async function resumirDocumento(id, tamanho = "medio") {
+  const { data } = await api.post(ENDPOINTS.resumir(id), { tamanho }, { timeout: 180000 });
+  return data.resumo;
 }
 
 // GET /api/files/<id>/arquivo/  ->  o PDF original (Blob). Vai pela API para levar o token de login.

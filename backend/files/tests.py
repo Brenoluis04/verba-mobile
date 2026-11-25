@@ -17,7 +17,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import FileUpload
-from .traducao import TraducaoErro, Tradutor, dividir_texto
+from .traducao import Resumidor, TraducaoErro, Tradutor, dividir_texto
 
 User = get_user_model()
 MEDIA_TEMP = tempfile.mkdtemp()
@@ -501,3 +501,168 @@ class TradutorTests(APITestCase):
         with self.assertRaises(TraducaoErro) as ctx:
             Tradutor("a" * 70000).traduzir()
         self.assertEqual(ctx.exception.status, 422)
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TEMP, GEMINI_API_KEY="chave-de-teste")
+class ResumoTests(APITestCase):
+    """A IA é sempre simulada (patch em Resumidor._gerar): nenhum teste gasta chamadas."""
+
+    def setUp(self):
+        self.maria = User.objects.create_user("maria@email.com", password="SenhaForte#2026")
+        self.joao = User.objects.create_user("joao@email.com", password="SenhaForte#2026")
+        self.client.force_authenticate(self.maria)
+        self.doc = self.criar("Com texto", "a.pdf", pdf_com_texto("Hello world"))
+
+    def criar(self, nome, arquivo, conteudo, user=None, categoria="PDF"):
+        return FileUpload.objects.create(
+            user=user or self.maria,
+            nome_exib=nome,
+            categoria=categoria,
+            conteudo=SimpleUploadedFile(arquivo, conteudo),
+        )
+
+    def resumir(self, pk, dados=None):
+        return self.client.post(reverse("files:resumir", args=[pk]), dados, format="json")
+
+    def test_sem_login_e_negado(self):
+        self.client.force_authenticate(None)
+        self.assertEqual(self.resumir(self.doc.pk).status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_so_aceita_post(self):
+        r = self.client.get(reverse("files:resumir", args=[self.doc.pk]))
+        self.assertEqual(r.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @patch("files.traducao.Resumidor._gerar", return_value="Resumo curto")
+    def test_resume_o_texto_do_pdf_com_tamanho_padrao(self, ia):
+        r = self.resumir(self.doc.pk)
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertEqual(r.data["resumo"], "Resumo curto")
+        self.assertEqual(r.data["tamanho"], "medio")
+        self.assertIn("Hello world", ia.call_args[0][0])  # a IA recebeu o texto do PDF
+
+    @patch("files.traducao.Resumidor._gerar", return_value="Resumo")
+    def test_aceita_tamanho_curto(self, ia):
+        r = self.resumir(self.doc.pk, {"tamanho": "curto"})
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertEqual(r.data["tamanho"], "curto")
+        self.assertIn("5 frases", ia.call_args[0][0])
+
+    @patch("files.traducao.Resumidor._gerar", return_value="x")
+    def test_tamanho_invalido_da_400_sem_chamar_a_ia(self, ia):
+        r = self.resumir(self.doc.pk, {"tamanho": "gigante"})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        ia.assert_not_called()
+
+    @patch("files.traducao.Resumidor._gerar", return_value="x")
+    def test_arquivo_de_outro_usuario_da_404_e_nao_chama_a_ia(self, ia):
+        alheio = self.criar("Dele", "d.pdf", pdf_com_texto(), user=self.joao)
+        r = self.resumir(alheio.pk)
+        self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
+        ia.assert_not_called()
+
+    @patch("files.traducao.Resumidor._gerar", return_value="x")
+    def test_arquivo_que_nao_e_pdf_da_400(self, ia):
+        img = self.criar("Imagem", "p.png", b"\x89PNG", categoria="HQ")
+        self.assertEqual(self.resumir(img.pk).status_code, status.HTTP_400_BAD_REQUEST)
+        ia.assert_not_called()
+
+    @patch("files.traducao.Resumidor._gerar")
+    def test_limite_diario_acabou(self, ia):
+        ia.side_effect = TraducaoErro("O limite diário de uso da IA acabou.", status=429)
+        r = self.resumir(self.doc.pk)
+        self.assertEqual(r.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertIn("limite", r.data["erro"])
+
+    @override_settings(GEMINI_API_KEY="")
+    @patch("files.traducao.Resumidor._gerar", return_value="x")
+    def test_sem_chave_configurada_avisa(self, ia):
+        r = self.resumir(self.doc.pk)
+        self.assertEqual(r.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertIn("GEMINI_API_KEY", r.data["erro"])
+        ia.assert_not_called()
+
+    @patch("files.traducao.Resumidor._gerar", side_effect=lambda p: "[resumo]")
+    def test_texto_longo_resume_por_partes_e_une_no_final(self, ia):
+        longo = "\n\n".join(f"Parágrafo número {i}. " + "palavra " * 200 for i in range(20))
+        doc = self.criar("Longo", "l.pdf", pdf_com_texto("curto"))
+        with patch("files.views.extrair_texto_pdf", return_value=longo):
+            r = self.resumir(doc.pk)
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        partes = len(dividir_texto(longo))
+        self.assertGreater(partes, 1)
+        self.assertEqual(ia.call_count, partes + 1)  # uma chamada por parte + a união final
+
+
+class ResumidorTests(APITestCase):
+    @override_settings(GEMINI_API_KEY="chave-de-teste")
+    def test_texto_curto_faz_uma_unica_chamada(self):
+        with patch("files.traducao.Resumidor._gerar", return_value="ok") as ia:
+            self.assertEqual(Resumidor("Hello").resumir(), "ok")
+        self.assertEqual(ia.call_count, 1)
+
+    def test_tamanho_invalido(self):
+        with self.assertRaises(TraducaoErro) as ctx:
+            Resumidor("Hello", "gigante")
+        self.assertEqual(ctx.exception.status, 400)
+
+    @override_settings(GEMINI_API_KEY="chave-de-teste")
+    def test_texto_grande_demais_e_recusado(self):
+        with self.assertRaises(TraducaoErro) as ctx:
+            Resumidor("a" * 70000).resumir()
+        self.assertEqual(ctx.exception.status, 422)
+
+
+@override_settings(GEMINI_API_KEY="chave-de-teste", GEMINI_MODEL="modelo-de-teste")
+class RetentativaTests(APITestCase):
+    """Gemini lotado (503) é tentado de novo; a pausa é simulada para o teste não demorar."""
+
+    @patch("files.traducao.time.sleep")
+    def test_503_tenta_de_novo_e_funciona(self, sleep):
+        chamadas = []
+        holder = {}
+
+        def gerar(model, contents):
+            chamadas.append(1)
+            if len(chamadas) < 3:
+                raise holder["erro"](503)
+            return types.SimpleNamespace(text="Olá")
+
+        with gemini_falso(gerar) as APIError:
+            holder["erro"] = APIError
+            self.assertEqual(Tradutor("Hello").traduzir(), "Olá")
+        self.assertEqual(len(chamadas), 3)
+        self.assertEqual(sleep.call_count, 2)
+
+    @patch("files.traducao.time.sleep")
+    def test_503_persistente_vira_502_depois_de_3_tentativas(self, sleep):
+        chamadas = []
+        holder = {}
+
+        def gerar(model, contents):
+            chamadas.append(1)
+            raise holder["erro"](503)
+
+        with gemini_falso(gerar) as APIError:
+            holder["erro"] = APIError
+            with self.assertRaises(TraducaoErro) as ctx:
+                Tradutor("Hello").traduzir()
+        self.assertEqual(ctx.exception.status, 502)
+        self.assertEqual(len(chamadas), 3)
+
+    @patch("files.traducao.time.sleep")
+    def test_429_nao_tenta_de_novo(self, sleep):
+        chamadas = []
+        holder = {}
+
+        def gerar(model, contents):
+            chamadas.append(1)
+            raise holder["erro"](429)
+
+        with gemini_falso(gerar) as APIError:
+            holder["erro"] = APIError
+            with self.assertRaises(TraducaoErro) as ctx:
+                Tradutor("Hello").traduzir()
+        self.assertEqual(ctx.exception.status, 429)
+        self.assertEqual(len(chamadas), 1)
+        sleep.assert_not_called()
+

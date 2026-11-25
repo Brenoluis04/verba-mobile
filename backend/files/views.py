@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 from .models import FileUpload
 from .serial import FileUploadSerializer, RenomearSerializer
-from .traducao import Tradutor, TraducaoErro
+from .traducao import Resumidor, Tradutor, TraducaoErro
 
 
 class MeusArquivosMixin:
@@ -141,3 +141,21 @@ class FileUploadTraduzirView(MeusArquivosMixin, generics.GenericAPIView):
         except TraducaoErro as e:
             return Response({"erro": e.mensagem}, status=e.status)
         return Response({"id": arquivo.pk, "traducao": traducao})
+
+
+class FileUploadResumirView(MeusArquivosMixin, generics.GenericAPIView):
+    """POST /api/files/<id>/resumir/ (opcional: {"tamanho": "curto"|"medio"|"longo"})
+    -> resumo do PDF em português (Gemini)."""
+
+    def post(self, request, pk):
+        arquivo = self.get_object()  # 404 se for de outro usuário
+        tamanho = request.data.get("tamanho") or "medio"
+        texto, erro = _texto_do_pdf(arquivo)
+        if erro:
+            return erro
+
+        try:
+            resumo = Resumidor(texto, tamanho).resumir()
+        except TraducaoErro as e:
+            return Response({"erro": e.mensagem}, status=e.status)
+        return Response({"id": arquivo.pk, "tamanho": tamanho, "resumo": resumo})

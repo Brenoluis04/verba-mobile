@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  TAMANHOS_RESUMO,
   TAMANHO_MAXIMO_MB,
   buscarDocumento,
   buscarPdf,
   buscarTexto,
   enviarDocumento,
+  resumirDocumento,
   traduzirDocumento,
   validarArquivo,
 } from "../services/documentService";
@@ -13,7 +15,7 @@ import { getErrorMessage } from "../services/api";
 import "./Leitor.css";
 
 // /leitor      -> escolher um PDF e salvar na Biblioteca
-// /leitor/:id  -> ler o texto de um PDF da Biblioteca e traduzir com IA
+// /leitor/:id  -> ver o PDF da Biblioteca, traduzir e resumir com IA
 export default function Leitor() {
   const { id } = useParams();
   return id ? <LeitorDocumento key={id} id={id} /> : <LeitorEnvio />;
@@ -69,6 +71,7 @@ const PASSOS = [
   ["Envie", "Escolha um PDF com texto selecionável."],
   ["Leia", "O texto do documento aparece no Leitor."],
   ["Traduza", "A IA traduz tudo para o português."],
+  ["Resuma", "Ou peça um resumo curto, médio ou detalhado."],
 ];
 
 function LeitorEnvio() {
@@ -139,7 +142,7 @@ function LeitorEnvio() {
     <main className="leitor-page envio-page">
       <header className="envio-cabecalho">
         <h1 className="leitor-titulo">Leitor</h1>
-        <p>Envie um PDF para ler e traduzir.</p>
+        <p>Envie um PDF para ler, traduzir e resumir.</p>
       </header>
 
       {/* O campo fica fora da tela (e não "hidden") para continuar acessível pelo teclado. */}
@@ -244,15 +247,22 @@ function LeitorEnvio() {
 
 function LeitorDocumento({ id }) {
   const [documento, setDocumento] = useState(null);
-  const [texto, setTexto] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [carregandoPdf, setCarregandoPdf] = useState(true);
+  const [erroVisualizacao, setErroVisualizacao] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erroDocumento, setErroDocumento] = useState("");
   const [erroTexto, setErroTexto] = useState("");
 
-  const [aba, setAba] = useState("original"); // "original" | "traducao"
+  const [aba, setAba] = useState("original"); // "original" | "traducao" | "resumo"
   const [traducao, setTraducao] = useState("");
   const [traduzindo, setTraduzindo] = useState(false);
   const [erroTraducao, setErroTraducao] = useState("");
+
+  const [resumo, setResumo] = useState("");
+  const [tamanhoResumo, setTamanhoResumo] = useState("medio");
+  const [resumindo, setResumindo] = useState(false);
+  const [erroResumo, setErroResumo] = useState("");
 
   const [abrindoPdf, setAbrindoPdf] = useState(false);
   const [erroPdf, setErroPdf] = useState("");
@@ -277,10 +287,9 @@ function LeitorDocumento({ id }) {
         }
       });
 
+    // O texto extraído não é mostrado: serve só para saber se o PDF dá para traduzir/resumir
+    // (PDF escaneado, por exemplo, volta com erro e desativa os botões).
     const pegarTexto = buscarTexto(id)
-      .then((t) => {
-        if (!cancelado) setTexto(t);
-      })
       .catch((err) => {
         if (!cancelado) setErroTexto(getErrorMessage(err, "Não foi possível ler o texto do PDF."));
       });
@@ -289,8 +298,24 @@ function LeitorDocumento({ id }) {
       if (!cancelado) setCarregando(false);
     });
 
+    // O PDF original é buscado à parte (pode ser grande) e exibido na aba "Original".
+    let urlLocal = "";
+    buscarPdf(id)
+      .then((blob) => {
+        if (cancelado) return;
+        urlLocal = URL.createObjectURL(blob);
+        setPdfUrl(urlLocal);
+      })
+      .catch((err) => {
+        if (!cancelado) setErroVisualizacao(getErrorMessage(err, "Não foi possível carregar o PDF."));
+      })
+      .finally(() => {
+        if (!cancelado) setCarregandoPdf(false);
+      });
+
     return () => {
       cancelado = true;
+      if (urlLocal) URL.revokeObjectURL(urlLocal);
     };
   }, [id]);
 
@@ -316,6 +341,24 @@ function LeitorDocumento({ id }) {
       setAba("traducao");
     } finally {
       setTraduzindo(false);
+    }
+  }
+
+  async function resumir() {
+    if (resumindo) return;
+
+    setResumindo(true);
+    setErroResumo("");
+
+    try {
+      const resultado = await resumirDocumento(id, tamanhoResumo);
+      setResumo(resultado);
+      setAba("resumo");
+    } catch (err) {
+      setErroResumo(getErrorMessage(err, "Não foi possível resumir o documento."));
+      setAba("resumo");
+    } finally {
+      setResumindo(false);
     }
   }
 
@@ -388,10 +431,39 @@ function LeitorDocumento({ id }) {
         >
           {traduzindo ? "Traduzindo..." : traducao ? "Traduzir novamente" : "Traduzir com IA"}
         </button>
+        <button
+          type="button"
+          className="leitor-secundario"
+          onClick={resumir}
+          disabled={resumindo || Boolean(erroTexto)}
+        >
+          {resumindo ? "Resumindo..." : resumo ? "Resumir novamente" : "Resumir com IA"}
+        </button>
         <button type="button" className="leitor-secundario" onClick={abrirPdfOriginal} disabled={abrindoPdf}>
           {abrindoPdf ? "Abrindo..." : "Ver PDF original"}
         </button>
       </div>
+
+      <label className="leitor-tamanho">
+        Tamanho do resumo
+        <select
+          value={tamanhoResumo}
+          onChange={(e) => setTamanhoResumo(e.target.value)}
+          disabled={resumindo}
+        >
+          {TAMANHOS_RESUMO.map(({ valor, rotulo }) => (
+            <option key={valor} value={valor}>
+              {rotulo}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {erroTexto && (
+        <p className="leitor-mensagem erro" role="alert">
+          {erroTexto}
+        </p>
+      )}
 
       {erroPdf && (
         <p className="leitor-mensagem erro" role="alert">
@@ -418,16 +490,50 @@ function LeitorDocumento({ id }) {
         >
           Tradução
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={aba === "resumo"}
+          className={aba === "resumo" ? "aba ativa" : "aba"}
+          onClick={() => setAba("resumo")}
+        >
+          Resumo
+        </button>
       </div>
 
       <section className="leitor-texto" role="tabpanel">
         {aba === "original" ? (
-          erroTexto ? (
+          erroVisualizacao ? (
             <p className="leitor-mensagem erro" role="alert">
-              {erroTexto}
+              {erroVisualizacao}
             </p>
+          ) : carregandoPdf ? (
+            <div className="leitor-loading" role="status">
+              <div className="loading-spinner"></div>
+              <p>Carregando PDF...</p>
+            </div>
           ) : (
-            <p className="leitor-paragrafos">{texto}</p>
+            <iframe className="leitor-pdf" src={pdfUrl} title="PDF original" />
+          )
+        ) : aba === "resumo" ? (
+          resumindo ? (
+            <div className="leitor-loading" role="status">
+              <div className="loading-spinner"></div>
+              <p>Resumindo com IA... textos longos podem levar alguns segundos.</p>
+            </div>
+          ) : erroResumo ? (
+            <div className="leitor-estado" role="alert">
+              <p className="leitor-mensagem erro">{erroResumo}</p>
+              <button type="button" className="btn-primary leitor-botao-link" onClick={resumir}>
+                Tentar novamente
+              </button>
+            </div>
+          ) : resumo ? (
+            <p className="leitor-paragrafos">{resumo}</p>
+          ) : (
+            <p className="leitor-aviso">
+              Ainda não há resumo. Escolha o tamanho e toque em “Resumir com IA”.
+            </p>
           )
         ) : traduzindo ? (
           <div className="leitor-loading" role="status">
