@@ -3,9 +3,9 @@ import AuthForm from "../components/AuthForm";
 import { useAuth } from "../contexts/AuthContext";
 
 const CAMPOS = [
-  { name: "nome_completo", type: "text", placeholder: "Nome completo" },
-  { name: "email", type: "email", placeholder: "Email" },
-  { name: "senha", type: "password", placeholder: "Senha" },
+  { name: "nome_completo", type: "text", placeholder: "Nome completo", autoComplete: "name" },
+  { name: "email", type: "email", placeholder: "Email", autoComplete: "email" },
+  { name: "senha", type: "password", placeholder: "Senha", autoComplete: "new-password" },
 ];
 
 export default function Cadastro() {
@@ -19,7 +19,7 @@ export default function Cadastro() {
       erroPadrao="Não foi possível cadastrar."
       onSubmit={async (valores) => {
         await signUp(valores);
-        navigate("/trilhas");
+        navigate("/biblioteca");
       }}
       rodape={{ texto: "Já tem uma conta?", link: "Faça login.", to: "/login" }}
     />

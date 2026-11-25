@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import ProgressBar from "../components/ProgressBar";
-import { CATEGORIAS, listarDocumentos } from "../services/documentService";
+import {
+  CATEGORIAS,
+  NOME_MAX_CARACTERES,
+  excluirDocumento,
+  listarDocumentos,
+  renomearDocumento,
+} from "../services/documentService";
 import { getErrorMessage } from "../services/api";
 import "./Biblioteca.css";
 
@@ -62,8 +68,133 @@ const IconeAlerta = () => (
   </Icone>
 );
 
+const IconeLapis = () => (
+  <Icone>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+  </Icone>
+);
+
+const IconeLixeira = () => (
+  <Icone>
+    <path d="M3 6h18" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+  </Icone>
+);
+
 // Permite quebrar a linha depois de "_" e "-" (evita cortar a extensão no meio, como "p" + "df").
 const nomeQuebravel = (nome) => nome.replace(/([_-])/g, "$1\u200b");
+
+// Janelinha para renomear ou excluir um documento.
+//  acao: { tipo: "renomear" | "excluir", doc }
+function JanelaAcao({ acao, onFechar, onRenomeado, onExcluido }) {
+  const { tipo, doc } = acao;
+  const [nome, setNome] = useState(doc.nome);
+  const [trabalhando, setTrabalhando] = useState(false);
+  const [erro, setErro] = useState("");
+  const campo = useRef(null);
+
+  // Foco no campo ao abrir (só ao abrir, para não roubar o foco depois).
+  useEffect(() => {
+    campo.current?.focus();
+    campo.current?.select();
+  }, []);
+
+  // Esc fecha a janela.
+  useEffect(() => {
+    const aoApertar = (e) => {
+      if (e.key === "Escape" && !trabalhando) onFechar();
+    };
+    window.addEventListener("keydown", aoApertar);
+    return () => window.removeEventListener("keydown", aoApertar);
+  }, [trabalhando, onFechar]);
+
+  async function confirmar(e) {
+    e.preventDefault();
+    if (trabalhando) return;
+
+    if (tipo === "renomear" && !nome.trim()) {
+      setErro("Digite um nome.");
+      return;
+    }
+
+    setTrabalhando(true);
+    setErro("");
+    try {
+      if (tipo === "renomear") {
+        onRenomeado(await renomearDocumento(doc.id, nome));
+      } else {
+        await excluirDocumento(doc.id);
+        onExcluido(doc.id);
+      }
+    } catch (err) {
+      setErro(
+        err.response?.status === 404
+          ? "Este documento não existe mais."
+          : getErrorMessage(err, "Não foi possível concluir. Tente novamente.")
+      );
+      setTrabalhando(false);
+    }
+  }
+
+  const excluindo = tipo === "excluir";
+
+  return (
+    <div
+      className="janela-fundo"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !trabalhando) onFechar();
+      }}
+    >
+      <form
+        className="janela"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="janela-titulo"
+        onSubmit={confirmar}
+      >
+        <h2 id="janela-titulo">{excluindo ? "Excluir documento?" : "Renomear documento"}</h2>
+
+        {excluindo ? (
+          <p className="janela-texto">
+            “{doc.nome}” e o PDF salvo serão apagados. Essa ação não pode ser desfeita.
+          </p>
+        ) : (
+          <input
+            ref={campo}
+            className="janela-campo"
+            type="text"
+            aria-label="Novo nome"
+            value={nome}
+            maxLength={NOME_MAX_CARACTERES}
+            onChange={(e) => setNome(e.target.value)}
+          />
+        )}
+
+        {erro && (
+          <p className="error-message" role="alert">
+            {erro}
+          </p>
+        )}
+
+        <div className="janela-botoes">
+          <button type="button" className="biblioteca-acao secundaria" onClick={onFechar} disabled={trabalhando}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className={excluindo ? "btn-primary biblioteca-acao perigo" : "btn-primary biblioteca-acao"}
+            disabled={trabalhando}
+          >
+            {trabalhando ? "Aguarde..." : excluindo ? "Excluir" : "Salvar"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 export default function Biblioteca() {
   const [pesquisa, setPesquisa] = useState("");
@@ -73,6 +204,7 @@ export default function Biblioteca() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [tentativa, setTentativa] = useState(0);
+  const [acao, setAcao] = useState(null); // { tipo: "renomear" | "excluir", doc }
 
   // Busca os documentos na API (GET /api/files/) ao abrir a tela e a cada "Tentar novamente".
   useEffect(() => {
@@ -98,6 +230,18 @@ export default function Biblioteca() {
     setErro("");
     setCarregando(true);
     setTentativa((n) => n + 1);
+  }
+
+  const fecharJanela = () => setAcao(null);
+
+  function aoRenomear(atualizado) {
+    setDocumentos((lista) => lista.map((d) => (d.id === atualizado.id ? { ...d, nome: atualizado.nome } : d)));
+    setAcao(null);
+  }
+
+  function aoExcluir(id) {
+    setDocumentos((lista) => lista.filter((d) => d.id !== id));
+    setAcao(null);
   }
 
   function limparFiltros() {
@@ -190,7 +334,7 @@ export default function Biblioteca() {
           </div>
           <h2>Sua biblioteca está vazia</h2>
           <p className="biblioteca-vazia">
-            Abra um PDF ou uma HQ no Leitor e salve aqui para acompanhar o seu progresso.
+            Abra um PDF no Leitor e salve aqui para ler, traduzir e acompanhar o seu progresso.
           </p>
           <Link to="/leitor" className="btn-primary biblioteca-acao">
             Abrir o Leitor
@@ -199,20 +343,43 @@ export default function Biblioteca() {
       ) : documentosFiltrados.length > 0 ? (
         <section className="biblioteca-documentos">
           {documentosFiltrados.map((doc, indice) => (
-            <article
-              className="documento-card"
+            <div
+              className="documento-item"
               key={doc.id}
               style={{ animationDelay: `${Math.min(indice, 8) * 45}ms` }}
             >
-              <h3 title={doc.nome}>{nomeQuebravel(doc.nome)}</h3>
+              <Link to={`/leitor/${doc.id}`} className="documento-card" aria-label={`Abrir ${doc.nome} no Leitor`}>
+                <h3 title={doc.nome}>{nomeQuebravel(doc.nome)}</h3>
 
-              <div className={doc.tipo === "HQ" ? "documento-preview hq" : "documento-preview"}>
-                <span className="documento-selo">{doc.tipo}</span>
-                {doc.tipo === "HQ" ? <IconeHq /> : <IconePdf />}
+                <div className={doc.tipo === "HQ" ? "documento-preview hq" : "documento-preview"}>
+                  <span className="documento-selo">{doc.tipo}</span>
+                  {doc.tipo === "HQ" ? <IconeHq /> : <IconePdf />}
+                </div>
+
+                <ProgressBar value={doc.progresso} />
+              </Link>
+
+              <div className="documento-acoes">
+                <button
+                  type="button"
+                  className="documento-icone"
+                  aria-label={`Renomear ${doc.nome}`}
+                  title="Renomear"
+                  onClick={() => setAcao({ tipo: "renomear", doc })}
+                >
+                  <IconeLapis />
+                </button>
+                <button
+                  type="button"
+                  className="documento-icone perigo"
+                  aria-label={`Excluir ${doc.nome}`}
+                  title="Excluir"
+                  onClick={() => setAcao({ tipo: "excluir", doc })}
+                >
+                  <IconeLixeira />
+                </button>
               </div>
-
-              <ProgressBar value={doc.progresso} />
-            </article>
+            </div>
           ))}
         </section>
       ) : (
@@ -226,6 +393,16 @@ export default function Biblioteca() {
             Limpar filtros
           </button>
         </div>
+      )}
+
+      {acao && (
+        <JanelaAcao
+          key={`${acao.tipo}-${acao.doc.id}`}
+          acao={acao}
+          onFechar={fecharJanela}
+          onRenomeado={aoRenomear}
+          onExcluido={aoExcluir}
+        />
       )}
     </main>
   );

@@ -336,3 +336,144 @@
     font-size: 14px;
   }
 }
+
+/* O card é um link para /leitor/:id. */
+a.documento-card {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.documento-card:hover {
+  text-decoration: none;
+}
+
+/* ---------- Renomear e excluir ---------- */
+
+/* O item guarda o card (link) e, por cima, os botões de ação. */
+.documento-item {
+  position: relative;
+  min-width: 0;
+  animation: entrar 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.documento-item > .documento-card {
+  height: 100%;
+  animation: none; /* a animação de entrada agora é do item */
+}
+
+.documento-item .documento-card h3 {
+  padding-right: 64px; /* espaço para os dois botões */
+}
+
+.documento-acoes {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+}
+
+.documento-icone {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.documento-icone svg {
+  width: 17px;
+  height: 17px;
+}
+
+.documento-icone:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--texto);
+}
+
+.documento-icone.perigo:hover {
+  background: rgba(255, 107, 107, 0.14);
+  color: var(--perigo);
+}
+
+/* Janelinha (por cima do menu inferior, que usa z-index 1000). */
+.janela-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.janela {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 22px;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--raio-card);
+  box-shadow: var(--sombra-card);
+}
+
+.janela h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.janela-texto {
+  font-size: 14px;
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.janela-campo {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: #232325;
+  color: var(--texto);
+  font-size: 16px;
+  outline: none;
+}
+
+.janela-campo:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 4px var(--azul-suave);
+}
+
+.janela-botoes {
+  display: flex;
+  gap: 10px;
+}
+
+.janela-botoes .biblioteca-acao {
+  flex: 1;
+  margin: 0;
+}
+
+.btn-primary.perigo {
+  background: #e5484d;
+  box-shadow: 0 6px 18px rgba(229, 72, 77, 0.28);
+}
+
+.btn-primary.perigo:hover:not(:disabled) {
+  background: #cf3a3f;
+}

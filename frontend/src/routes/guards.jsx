@@ -10,5 +10,5 @@ export function PrivateRoute({ children }) {
 // Impede usuário já logado de ver login/cadastro.
 export function PublicRoute({ children }) {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/trilhas" replace /> : children;
+  return isAuthenticated ? <Navigate to="/biblioteca" replace /> : children;
 }

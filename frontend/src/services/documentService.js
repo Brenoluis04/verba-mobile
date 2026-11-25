@@ -1,22 +1,33 @@
 import api from "./api";
 
-// ATENÇÃO: quando este arquivo foi escrito, a branch feature/biblioteca do back-end só tinha
-// o model FileUpload e o serializer (sem views nem URLs). O caminho abaixo é o esperado
-// (http://localhost:8000/api/files/). Quando o back-end publicar as rotas reais, ajuste só aqui.
+// Rotas do back-end (backend/files/urls.py). Todas exigem login e só enxergam arquivos do próprio usuário.
 const ENDPOINTS = {
   documentos: "/files/",
+  documento: (id) => `/files/${id}/`,
+  arquivo: (id) => `/files/${id}/arquivo/`,
+  texto: (id) => `/files/${id}/texto/`,
+  traduzir: (id) => `/files/${id}/traduzir/`,
 };
+
+// Só PDF, até 50 MB (o back-end valida de novo em backend/files/serial.py).
+export const TAMANHO_MAXIMO_MB = 50;
+const TAMANHO_MAXIMO = TAMANHO_MAXIMO_MB * 1024 * 1024;
+
+// Devolve a mensagem de erro se o arquivo não pode ser enviado, ou "" se está tudo certo.
+export function validarArquivo(arquivo) {
+  const ehPdf = arquivo.type === "application/pdf" || arquivo.name.toLowerCase().endsWith(".pdf");
+  if (!ehPdf) return "Envie um arquivo PDF.";
+  if (arquivo.size > TAMANHO_MAXIMO) {
+    return `O arquivo passa do limite de ${TAMANHO_MAXIMO_MB} MB.`;
+  }
+  return "";
+}
 
 // Limite do campo nome_exib do model FileUpload (backend/files/models.py).
 const NOME_MAX = 30;
 
-// Categorias aceitas pelo back-end (backend/files/models.py). Os filtros da Biblioteca usam esta lista.
-export const CATEGORIAS = ["PDF", "HQ"];
-
-// Categoria do documento: imagens (HQ/mangá) viram "HQ"; o restante (PDF) vira "PDF".
-export function categoriaDoArquivo(arquivo) {
-  return arquivo.type?.startsWith("image/") ? "HQ" : "PDF";
-}
+// Categorias dos filtros da Biblioteca. Como só PDF é aceito, só existe "PDF".
+export const CATEGORIAS = ["PDF"];
 
 // O back-end aceita no máximo 30 caracteres em nome_exib. Se passar disso, corta o nome
 // e mantém a extensão (ex.: "um-nome-muito-longo-de-arquivo.pdf" -> "um-nome-muito-longo-de-arq.pdf").
@@ -48,17 +59,60 @@ export async function listarDocumentos() {
 }
 
 // POST /api/files/  (multipart/form-data) com nome_exib, categoria e conteudo (o arquivo)
-export async function enviarDocumento(arquivo) {
+// `aoProgredir(percentual)` é opcional: é chamado durante o envio, de 0 a 100.
+export async function enviarDocumento(arquivo, aoProgredir) {
   const form = new FormData();
   form.append("nome_exib", nomeParaExibicao(arquivo.name));
-  form.append("categoria", categoriaDoArquivo(arquivo));
+  form.append("categoria", "PDF");
   form.append("conteudo", arquivo);
   // O api.js usa application/json como padrão e, nesse caso, o axios converteria o FormData em JSON
   // (o arquivo se perderia). Por isso o tipo multipart é informado aqui; o navegador completa
   // o "boundary" sozinho. O timeout é maior porque upload pode demorar mais que os 15 s padrão.
   const { data } = await api.post(ENDPOINTS.documentos, form, {
     headers: { "Content-Type": "multipart/form-data" },
-    timeout: 60000,
+    timeout: 300000, // 5 min: PDFs grandes (até 50 MB) em conexão lenta
+    onUploadProgress: (evento) => {
+      if (aoProgredir && evento.total) aoProgredir(Math.round((evento.loaded * 100) / evento.total));
+    },
   });
   return paraDocumento(data);
+}
+
+// GET /api/files/<id>/  ->  dados de um documento (404 se não existir ou for de outra pessoa)
+export async function buscarDocumento(id) {
+  const { data } = await api.get(ENDPOINTS.documento(id));
+  return paraDocumento(data);
+}
+
+// GET /api/files/<id>/texto/  ->  texto extraído do PDF (erro 422 se o PDF for escaneado)
+export async function buscarTexto(id) {
+  const { data } = await api.get(ENDPOINTS.texto(id), { timeout: 60000 });
+  return data.texto;
+}
+
+// POST /api/files/<id>/traduzir/  ->  tradução em português feita pela IA (Gemini).
+// Textos longos são traduzidos em várias partes, então o timeout é grande.
+export async function traduzirDocumento(id) {
+  const { data } = await api.post(ENDPOINTS.traduzir(id), null, { timeout: 180000 });
+  return data.traducao;
+}
+
+// GET /api/files/<id>/arquivo/  ->  o PDF original (Blob). Vai pela API para levar o token de login.
+export async function buscarPdf(id) {
+  const { data } = await api.get(ENDPOINTS.arquivo(id), { responseType: "blob", timeout: 60000 });
+  return data;
+}
+
+// Limite do nome (backend/files/models.py), usado pelo campo de renomear.
+export const NOME_MAX_CARACTERES = NOME_MAX;
+
+// PATCH /api/files/<id>/  (nome_exib)  ->  renomeia o documento
+export async function renomearDocumento(id, nome) {
+  const { data } = await api.patch(ENDPOINTS.documento(id), { nome_exib: nome.trim() });
+  return paraDocumento(data);
+}
+
+// DELETE /api/files/<id>/  ->  apaga o documento e o PDF do disco
+export async function excluirDocumento(id) {
+  await api.delete(ENDPOINTS.documento(id));
 }

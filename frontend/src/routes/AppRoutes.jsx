@@ -41,9 +41,8 @@ export default function AppRoutes() {
         }
       >
         <Route path="/leitor" element={<Leitor />} />
+        <Route path="/leitor/:id" element={<Leitor />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
-        {/* A página Trilhas foi removida. Login, Cadastro e guards ainda mandam para /trilhas, então ela só redireciona. */}
-        <Route path="/trilhas" element={<Navigate to="/leitor" replace />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

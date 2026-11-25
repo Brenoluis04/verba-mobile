@@ -3,8 +3,8 @@ import AuthForm from "../components/AuthForm";
 import { useAuth } from "../contexts/AuthContext";
 
 const CAMPOS = [
-  { name: "email", type: "email", placeholder: "Email" },
-  { name: "senha", type: "password", placeholder: "Senha" },
+  { name: "email", type: "email", placeholder: "Email", autoComplete: "email" },
+  { name: "senha", type: "password", placeholder: "Senha", autoComplete: "current-password" },
 ];
 
 export default function Login() {
@@ -18,7 +18,7 @@ export default function Login() {
       erroPadrao="Não foi possível entrar."
       onSubmit={async (valores) => {
         await signIn(valores);
-        navigate("/trilhas");
+        navigate("/biblioteca");
       }}
       rodape={{ texto: "Não tem uma conta?", link: "Cadastre-se.", to: "/cadastro" }}
     />
